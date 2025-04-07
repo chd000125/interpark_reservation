@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Map;
 
 @Component
 public class JwtUtil {
@@ -23,6 +24,15 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Claims 추출 (토큰에서 데이터 가져오기)
+    private Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
     // 토큰에서 사용자명 추출
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
@@ -33,20 +43,13 @@ public class JwtUtil {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
-        } catch (ExpiredJwtException e) {
-            System.out.println("토큰이 만료됨: " + e.getMessage());
-        } catch (MalformedJwtException e) {
-            System.out.println("잘못된 토큰 형식: " + e.getMessage());
-        } catch (SignatureException e) {
-            System.out.println("서명 검증 실패: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.out.println("토큰이 비어있거나 null입니다.");
+        } catch (JwtException e) {
+            return false;
         }
-        return false;
     }
 
     // Claims 추출 (토큰에서 데이터 가져오기)
-    private Claims getClaims(String token) {
+    public Map<String, Object> extractClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
